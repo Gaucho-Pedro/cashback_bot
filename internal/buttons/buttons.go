@@ -3,12 +3,9 @@ package buttons
 import "gopkg.in/telebot.v3"
 
 var (
-	selector = &telebot.ReplyMarkup{}
+	Selector = &telebot.ReplyMarkup{}
 
-	firstButton  = selector.Data("Я бы хотел(а) оставить отзыв", "No_feedback")
-	secondButton = selector.Data("Я уже оставил отзыв", "feedback") //TODO Добавить возможность прикрипления фото, имени и телефона
-	thirdButton  = selector.Data("У меня возник вопрос(проблема)", "question")
+	FirstButton  = telebot.Btn{Text: "Я бы хотел(а) оставить отзыв", Unique: "No feedback"}
+	SecondButton = telebot.Btn{Text: "Я уже оставил отзыв", Unique: "feedback"} //TODO Добавить возможность прикрипления фото, имени и телефона
+	ThirdButton  = telebot.Btn{Text: "У меня возник вопрос(проблема)", Unique: "question"}
 )
-
-type name struct {
-}
