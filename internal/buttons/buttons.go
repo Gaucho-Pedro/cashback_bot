@@ -1,11 +1,14 @@
 package buttons
 
-import tgBotApi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+import "gopkg.in/telebot.v3"
 
-func MainKeyboard() *tgBotApi.InlineKeyboardMarkup {
-	keyboard := tgBotApi.NewInlineKeyboardMarkup(
-		tgBotApi.NewInlineKeyboardRow(tgBotApi.NewInlineKeyboardButtonData("Я бы хотел(а) оставить отзыв", "No feedback")),
-		tgBotApi.NewInlineKeyboardRow(tgBotApi.NewInlineKeyboardButtonData("Я уже оставил отзыв", "feedback")),
-		tgBotApi.NewInlineKeyboardRow(tgBotApi.NewInlineKeyboardButtonData("У меня возник вопрос(проблема)", "question")))
-	return &keyboard
+var (
+	selector = &telebot.ReplyMarkup{}
+
+	firstButton  = selector.Data("Я бы хотел(а) оставить отзыв", "No_feedback")
+	secondButton = selector.Data("Я уже оставил отзыв", "feedback") //TODO Добавить возможность прикрипления фото, имени и телефона
+	thirdButton  = selector.Data("У меня возник вопрос(проблема)", "question")
+)
+
+type name struct {
 }
