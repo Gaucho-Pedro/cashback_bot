@@ -2,6 +2,7 @@ package main
 
 import (
 	"cashback_bot/internal/config"
+	"fmt"
 	nestedFormatter "github.com/antonfisher/nested-logrus-formatter"
 	log "github.com/sirupsen/logrus"
 	fsm "github.com/vitaliy-ukiru/fsm-telebot"
@@ -43,7 +44,7 @@ func main() {
 		Token:     config.GetConfig().BotToken,
 		Poller:    &telebot.LongPoller{Timeout: 20 * time.Second}, // TODO: Подумать над новым поллером с фильтром
 		ParseMode: telebot.ModeMarkdown,
-		//Verbose:   true,
+		Verbose:   config.GetConfig().BotDebug,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -70,7 +71,7 @@ func main() {
 
 	manager.Bind(telebot.OnText, InputNameState, OnInputName)
 	manager.Bind(telebot.OnText, InputPartNumberState, OnInputPartNumber)
-	manager.Bind(telebot.OnText, InputPhoneNumberState, OnInputPhoneNumber)
+	manager.Bind(telebot.OnText, InputPhoneNumberState, OnInputPhoneNumber(bot))
 
 	bot.Start()
 }
@@ -90,7 +91,7 @@ func OnStart(firstButton, secondButton, thirdButton, mainMenuButton telebot.Btn)
 	mainMenu.ResizeKeyboard = true
 
 	return func(context telebot.Context, state fsm.FSMContext) error {
-		log.Debugf("New user with id: %d", context.Chat().ID)
+		log.Infof("New user with id: %d", context.Chat().ID)
 		state.Finish(true)
 		context.Send("Спасибо, что выбрали SHIMA!\n\n"+
 			"Хотим сделать Вам кешбек в размере 100 руб на телефон или карту.\n\n"+
@@ -174,8 +175,8 @@ func OnFeedBackExist(context telebot.Context, state fsm.FSMContext) error {
 }
 func OnInputPhoto(context telebot.Context, state fsm.FSMContext) error {
 	if context.Update().Message.Photo != nil {
-		//TODO Сохранить фотку
 		log.Debug(context.Update().Message.Photo.File.FileSize)
+		state.Update("messageWithPhoto", context.Message())
 		state.Set(InputNameState)
 		return context.Send("Введите имя, под которым вы оставили отзыв на Wildberries\n" +
 			"(Только **Имя**, без фамилии)")
@@ -187,32 +188,41 @@ func OnInputPhoto(context telebot.Context, state fsm.FSMContext) error {
 }
 
 func OnInputName(context telebot.Context, state fsm.FSMContext) error {
-	//TODO Сохранить Имя
+	state.Update("name", context.Message().Text)
 	state.Set(InputPartNumberState)
-	return context.Send("Введите артикул товара (9 знаков)\n\n" +
+	return context.Send("Введите артикул товара (9 цифр)\n\n" +
 		"Посмотреть его можно в личном кабинете WB.\n" +
 		"Зайдите в раздел \"Профиль\" - >\"Покупки\"\n" +
 		"Нажмите на товар, чуть ниже вы найдете артикул")
 }
 
 func OnInputPartNumber(context telebot.Context, state fsm.FSMContext) error {
-	//TODO Сохранить артикул https://www.wildberries.ru/catalog/116612372/detail.aspx
 	matched, _ := regexp.MatchString("^[0-9]{9}$", context.Message().Text)
 	if matched {
+		state.Update("article", "https://www.wildberries.ru/catalog/"+context.Message().Text+"/detail.aspx")
 		state.Set(InputPhoneNumberState)
 		return context.Send("Введите номер телефона")
 	} else {
-		return context.Send("Укажите верный артикул (9 знаков)")
+		return context.Send("Укажите верный артикул (9 цифр)")
 	}
 }
 
-func OnInputPhoneNumber(context telebot.Context, state fsm.FSMContext) error {
-	//TODO Сохранить телефон
-	matched, _ := regexp.MatchString("^((\\+7|7|8)+([0-9]){10})$", context.Message().Text)
-	if matched {
-		state.Finish(true)
-		return context.Send("Отлично! Наш менеджер проверит ваш отзыв и отправит кешбэк в течении 6 часов")
-	} else {
-		return context.Send("Укажите верный номер телефона")
+func OnInputPhoneNumber(bot *telebot.Bot) fsm.Handler {
+	return func(context telebot.Context, state fsm.FSMContext) error {
+		matched, _ := regexp.MatchString("^((\\+7|7|8)+([0-9]){10})$", context.Message().Text)
+		if matched {
+			_, err := bot.Send(telebot.ChatID(config.GetConfig().AdminChatID), fmt.Sprintf("Новый Отзыв!\n\nИмя: %s\nТелефон: %s\nСссылка на товар:%s\nСкриншот отзыва👇", state.MustGet("name"), context.Message().Text, state.MustGet("article")))
+			if err != nil {
+				log.Error(err)
+			}
+			_, err = bot.Forward(telebot.ChatID(config.GetConfig().AdminChatID), state.MustGet("messageWithPhoto").(*telebot.Message))
+			if err != nil {
+				log.Error(err)
+			}
+			state.Finish(true)
+			return context.Send("Отлично! Наш менеджер проверит ваш отзыв и отправит кешбэк в течении 6 часов")
+		} else {
+			return context.Send("Укажите верный номер телефона")
+		}
 	}
 }

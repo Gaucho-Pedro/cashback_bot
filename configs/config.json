@@ -1,6 +1,6 @@
 {
   "LogLevel": "Debug",
-  "BotDebug": true,
+  "BotDebug": false,
   "BotToken": "5686403987:AAHuwHxcW62BPf59mGL-GCbUXbahk3id9tk",
   "AdminChatID": -1001735739599
 }
