@@ -15,20 +15,21 @@ type Config struct {
 	AdminChatID int64
 }
 
-var config Config
+var instance *Config
 var once sync.Once
 
 func GetConfig() *Config {
 	once.Do(func() {
+		instance = &Config{}
 		file, err := os.Open("configs/config.json")
 		if err != nil {
-			log.Fatal("f", err)
+			log.Fatal(err)
 		}
 		defer file.Close()
 		decoder := json.NewDecoder(file)
-		if err = decoder.Decode(&config); err != nil {
+		if err = decoder.Decode(instance); err != nil {
 			log.Fatal(err)
 		}
 	})
-	return &config
+	return instance
 }

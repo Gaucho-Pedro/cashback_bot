@@ -150,7 +150,7 @@ func OnPrintQuestion() fsm.Handler {
 		}
 		//state.Set(fsm.DefaultState)
 		state.Finish(true)
-		return context.Send("Ваше сообщение принято")
+		return context.Send("Ваше сообщение принято, наш менеджер вам скоро ответит🙂")
 	}
 }
 
@@ -173,6 +173,7 @@ func OnFeedBackExist(context telebot.Context, state fsm.FSMContext) error {
 		"Теперь нам необходим скриншот отзыва, ваше имя, артикул товара и номер телефона\n\n" +
 		"Отправте, пожалуйста, скриншот вашего отзыва сюда")
 }
+
 func OnInputPhoto(context telebot.Context, state fsm.FSMContext) error {
 	if context.Update().Message.Photo != nil {
 		log.Debug(context.Update().Message.Photo.File.FileSize)
